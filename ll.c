@@ -7,9 +7,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include<unistd.h>
 #include<getopt.h>
-#include<string.h>
 
 #define VERSION_NUMBER 0.1
 #define VERSION_STRING_HELPER(X) #X
@@ -40,7 +38,6 @@ struct linked_list_t
 	struct link_t *tail;    // pointer to the end of the list
 };
 
-static const char *optString = "vhVpd;";
 static const struct option longOpts[] = {
 	{ "verbose", no_argument, NULL, 'v'
 	},
@@ -56,6 +53,8 @@ static const struct option longOpts[] = {
 	}
 };
 
+static const char *optString = "vhVpd;";
+
 void usage(int exit_code)
 {
 	printf("Usage: ll [OPTION]\n\nMandatory arguments for long options are"
@@ -64,6 +63,16 @@ void usage(int exit_code)
 	      "  -p, --print\t\tprint the linked lists\n  -d, --debug=ANYTHING\tprint the state of myArgs and option"
 	      " used for -d, --debug=ANYTHING\n\n");
 	exit(exit_code);
+}
+
+struct linked_list_t* create_empty_list()
+{
+	struct linked_list_t *list = malloc(sizeof(struct linked_list_t));
+	list->length = 0;
+	list->head = NULL;
+	list->tail = NULL;
+
+	return list;
 }
 
 void add_to_list(struct linked_list_t *list, int value)
@@ -104,14 +113,17 @@ void print_list(struct linked_list_t *list)
 
 }
 
-struct linked_list_t* create_empty_list()
+void delete_list(struct linked_list_t *list)
 {
-	struct linked_list_t *list = malloc(sizeof(struct linked_list_t));
-	list->length = 0;
-	list->head = NULL;
-	list->tail = NULL;
+	struct link_t *link = list->head;
+	struct link_t *tmp_link = NULL;
 
-	return list;
+	while (link != NULL) {
+		tmp_link = link->next;
+		free(link);
+		link = tmp_link;
+	}
+	free(list);
 }
 
 int main(int argc, char *argv[])
@@ -147,9 +159,9 @@ int main(int argc, char *argv[])
 			myArgs.debug = TRUE;
 			myArgs.debug_opt = optarg;
 			break;
-                // case 0: // long option without a short arg (NO LONG OPTION WITHOUT A SHORT ARG SO BREAK)
-                        //usage(1);
-                        //break;
+		case 0: // long option without a short arg (NO LONG OPTION WITHOUT A SHORT ARGUMENT exit 1)
+			usage(1);
+			break;
 		default:
 			// you should not get to here unless you have a invalid argument
 			usage(1);
@@ -177,7 +189,7 @@ int main(int argc, char *argv[])
 		struct linked_list_t *list = create_empty_list();
 		fill_list(list);
 		print_list(list);
+		delete_list(list);
 	}
-
 	return 0;
 }
