@@ -54,7 +54,13 @@ void usage(int exit_code)
 
 void print_list()
 {
-        printf("Hello, World 2!\n");
+        int v;
+        int i;
+
+        for (i = 0; i < 10; i++) {
+                v = 100 + i;
+                printf("%2d: %3d\n", i, v);
+        }
 }
 
 int main(int argc, char *argv[])
