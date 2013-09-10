@@ -26,6 +26,19 @@ struct myArgs_t
         char *debug_opt; // The --debug option which will print options given
 } myArgs;
 
+struct link_t
+{
+        int value;       // value of this link
+        struct link_t *next;    // pointer to the next link
+};
+
+struct linked_list_t
+{
+        int length;      // length of the list
+        struct link_t *head;    // pointer to the beginning of the list
+        struct link_t *tail;    // pointer to the end of the list
+};
+
 static const char *optString = "vhVpd;";
 static const struct option longOpts[] = {
         { "verbose", no_argument, NULL, 'v'
@@ -52,15 +65,53 @@ void usage(int exit_code)
         exit(exit_code);
 }
 
-void print_list()
+void add_to_list(struct linked_list_t *list, int value)
 {
-        int v;
-        int i;
-
-        for (i = 0; i < 10; i++) {
-                v = 100 + i;
-                printf("%2d: %3d\n", i, v);
+        struct link_t *link = malloc(sizeof(struct link_t));
+        link->value = value;
+        link->next = NULL;
+        if (list->tail == NULL) {
+                list->tail = link;
+                list->head = link;
+                list->length = 1;
+        } else {
+                list->tail->next = link;
+                list->tail = link;
+                list->length++;
         }
+}
+
+
+void fill_list(struct linked_list_t *list)
+{
+        int i;
+        for (i = 0; i < 10; i++) {
+                add_to_list(list, 100 + i);
+        }
+}
+
+void print_list(struct linked_list_t *list)
+{
+        struct link_t *link = list->head;
+        int i = 0;
+
+        printf("list has %d elements\n", list->length);
+        while (link != NULL) {
+                printf("%2d: %3d, location: %p\n", i, link->value, link);
+                link = link->next;
+                i++;
+        }
+
+}
+
+struct linked_list_t* create_empty_list()
+{
+        struct linked_list_t *list = malloc(sizeof(struct linked_list_t));
+        list->length = 0;
+        list->head = NULL;
+        list->tail = NULL;
+
+        return list;
 }
 
 int main(int argc, char *argv[])
@@ -123,7 +174,9 @@ int main(int argc, char *argv[])
                        myArgs.version, myArgs.print, myArgs.debug);
         }
         if (myArgs.print == TRUE) {
-                print_list();
+                struct linked_list_t *list = create_empty_list();
+                fill_list(list);
+                print_list(list);
         }
 
         return 0;
