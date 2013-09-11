@@ -18,28 +18,28 @@
 
 struct myArgs_t
 {
-	int verbose;            // The -v --verbose args to turn on verbose mode
-	int help;               // The -h --help args to print a help message
-	int version;            // The -V --version args to print the version
-	int print;              // The -p --print args to print the linked lists
-	int debug;              // WILL MAKE VERBOSE TAKE DEBUG PLACE
-	char *debug_opt;        // The --debug arg which will print options given
-	int first;              // The --first arg which will print the first element of linked list
-	int rest;               // The --rest arg which will print all but the first element of linked list
-	char *nth;              // The --nth arg which will print the nth element of linked list
+	int verbose;            /* The -v --verbose args to turn on verbose mode */
+	int help;               /* The -h --help args to print a help message */
+	int version;            /* The -V --version args to print the version */
+	int print;              /* The -p --print args to print the linked lists */
+	int debug;              /* WILL MAKE VERBOSE TAKE DEBUG PLACE */
+	char *debug_opt;        /* The --debug arg which will print options given */
+	int first;              /* The --first arg which will print the first element of linked list */
+	int rest;               /* The --rest arg which will print all but the first element of linked list */
+	char *nth;              /* The --nth arg which will print the nth element of linked list */
 } myArgs;
 
 struct link_t
 {
-	int value;              // value of this link
-	struct link_t *next;    // pointer to the next link
+	int value;              /* value of this link */
+	struct link_t *next;    /* pointer to the next link */
 };
 
 struct linked_list_t
 {
-	int length;             // length of the list
-	struct link_t *head;    // pointer to the beginning of the list
-	struct link_t *tail;    // pointer to the end of the list
+	int length;             /* length of the list */
+	struct link_t *head;    /* pointer to the beginning of the list */
+	struct link_t *tail;    /* pointer to the end of the list */
 };
 
 static const struct option longOpts[] = {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 {
 	int opt = 0;
 
-	// Initialize myArgs elements
+	/* Initialize myArgs elements */
 	myArgs.verbose = FALSE;
 	myArgs.help = FALSE;
 	myArgs.version = FALSE;
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 			myArgs.debug = TRUE;
 			myArgs.debug_opt = optarg;
 			break;
-		case 0: // long option without a short arg
+		case 0: /* long option without a short arg */
 			if (strcmp("first", longOpts[longIndex].name) == 0) {
 				myArgs.first = TRUE;
 			} else if (strcmp("rest", longOpts[longIndex].name) == 0) {
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		default:
-			// you should not get to here unless you have a invalid argument
+			/* you should not get to here unless you have a invalid argument */
 			printf("default");
 			usage(1);
 			break;
