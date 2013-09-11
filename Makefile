@@ -17,4 +17,4 @@
 
   # clean the executable and modified src files
   clean-all:
-	$(RM) $(TARGET) && $(RM) *~
+	$(RM) $(TARGET) && $(RM) *~ && $(RM) *#

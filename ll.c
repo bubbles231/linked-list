@@ -8,6 +8,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<getopt.h>
+#include<string.h>
 
 #define VERSION_NUMBER 0.1
 #define VERSION_STRING_HELPER(X) #X
@@ -22,7 +23,10 @@ struct myArgs_t
 	int version;            // The -V --version args to print the version
 	int print;              // The -p --print args to print the linked lists
 	int debug;              // WILL MAKE VERBOSE TAKE DEBUG PLACE
-	char *debug_opt;        // The --debug option which will print options given
+	char *debug_opt;        // The --debug arg which will print options given
+	int first;              // The --first arg which will print the first element of linked list
+	int rest;               // The --rest arg which will print all but the first element of linked list
+	char *nth;              // The --nth arg which will print the nth element of linked list
 } myArgs;
 
 struct link_t
@@ -49,6 +53,12 @@ static const struct option longOpts[] = {
 	},
 	{ "debug", optional_argument, NULL, 'd'
 	},
+	{"first", no_argument, NULL, 0
+	},
+	{"rest", no_argument, NULL, 0
+	},
+	{"nth", required_argument, NULL, 0
+	},
 	{ NULL, no_argument, NULL, 0
 	}
 };
@@ -57,11 +67,13 @@ static const char *optString = "vhVpd;";
 
 void usage(int exit_code)
 {
-	printf("Usage: ll [OPTION]\n\nMandatory arguments for long options are"
-	      " also mandatory for short options\n  -v, --verbose\t\trun program verbosely\n"
-	      "  -h, --help\t\tprint this help message\n  -V, --version\t\tprint the program version\n"
-	      "  -p, --print\t\tprint the linked lists\n  -d, --debug=ANYTHING\tprint the state of myArgs and option"
-	      " used for -d, --debug=ANYTHING\n\n");
+	printf("Usage: ll [OPTION]\nA program that prints linked lists\n\nsome args cannot be run with debug"
+	       " because they exit the program\n  -v, --verbose\t\trun the program verbosely\n"
+	       "  -h, --help\t\tprint this help message and exit\n  -V, --version\t\tprint the program version"
+	       "and exit\n  -p, --print\t\tprint all links in the linked list\n  -d, --debug [OPTIONS]\tprint"
+	       "the state of myArgs and options given\n      --first\t\tprint the first link in the list\n"
+	       "      --rest\t\tprint all links minus the first one\n      --nth=LINK\tprint the link specified"
+               ", if the option is more than the number of links then\n\t\t\tthis prints the last link\n\n");
 	exit(exit_code);
 }
 
@@ -91,6 +103,7 @@ void add_to_list(struct linked_list_t *list, int value)
 	}
 }
 
+/* fill list with int starting at 100 ending 109 */
 void fill_list(struct linked_list_t *list)
 {
 	int i;
@@ -99,7 +112,7 @@ void fill_list(struct linked_list_t *list)
 	}
 }
 
-void print_list(struct linked_list_t *list)
+void print_all_list(struct linked_list_t *list)
 {
 	struct link_t *link = list->head;
 	int i = 0;
@@ -110,7 +123,44 @@ void print_list(struct linked_list_t *list)
 		link = link->next;
 		i++;
 	}
+}
 
+/* returns the nth link */
+struct link_t* find_link_at(struct linked_list_t *list, int nth)
+{
+	struct link_t *link = list->head;
+	int i;
+	for (i = 0; link != NULL; i++) {
+		if (i == nth) {
+			return link;
+		} else {
+			link = link->next;
+		}
+	}
+	return NULL;
+}
+
+/* prints the links specified */
+void print_some_links(struct linked_list_t *list, int links[])
+{
+	int i;
+	for (i = 0; i < sizeof(links); i++) {
+		struct link_t *link = find_link_at(list, links[i]);
+		printf("%2d: %3d, location: %p\n", i, link->value, link);
+	}
+}
+
+/* prints links in list starting from int start and stopping at int stop */
+void print_slice_list(struct linked_list_t *list, int start, int stop)
+{
+	int i;
+	struct link_t *link;
+
+	printf("printing links starting at: %d\n", start);
+	for (i = start; link = find_link_at(list, i), i < stop && link != NULL; i++) {
+		printf("%2d: %3d, location: %p\n", i, link->value, link);
+	}
+	printf("stopped printing links at link: %d\n", i - 1);
 }
 
 void delete_list(struct linked_list_t *list)
@@ -126,6 +176,43 @@ void delete_list(struct linked_list_t *list)
 	free(list);
 }
 
+struct linked_list_t* first(struct linked_list_t *list)
+{
+	struct linked_list_t *new_list = create_empty_list();
+	if (list->head != NULL) {
+		add_to_list(new_list, list->head->value);
+	}
+	delete_list(list);
+	return new_list;
+}
+
+struct linked_list_t* rest(struct linked_list_t *list)
+{
+	struct linked_list_t *new_list = create_empty_list();
+	if (list->head != NULL) {
+		new_list->head = list->head->next;
+		new_list->length = list->length - 1;
+		list->head->next = NULL;
+	}
+	delete_list(list);
+	return new_list;
+}
+
+int nth(struct linked_list_t *list, int n)
+{
+	struct link_t *link = list->head;
+	int i = 0;
+
+	while (link != NULL) {
+		if (i == n) {
+			return link->value;
+		}
+		link = link->next;
+		i++;
+	}
+	return -1;
+}
+
 int main(int argc, char *argv[])
 {
 	int opt = 0;
@@ -137,10 +224,12 @@ int main(int argc, char *argv[])
 	myArgs.print = FALSE;
 	myArgs.debug = FALSE;
 	myArgs.debug_opt = NULL;
-	int *longIndex = NULL; // cheap hack for the last arg of getopt_long FIXME
+	myArgs.first = FALSE;
+	myArgs.rest = FALSE;
+	myArgs.nth = NULL;
+	int longIndex = 0;
 
-
-	opt = getopt_long(argc, argv, optString, longOpts, longIndex);
+	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
 	while (opt != -1) {
 		switch (opt) {
 		case 'v':
@@ -159,15 +248,24 @@ int main(int argc, char *argv[])
 			myArgs.debug = TRUE;
 			myArgs.debug_opt = optarg;
 			break;
-		case 0: // long option without a short arg (NO LONG OPTION WITHOUT A SHORT ARGUMENT exit 1)
-			usage(1);
+		case 0: // long option without a short arg
+			if (strcmp("first", longOpts[longIndex].name) == 0) {
+				myArgs.first = TRUE;
+			} else if (strcmp("rest", longOpts[longIndex].name) == 0) {
+				myArgs.rest = TRUE;
+			} else if (strcmp("nth", longOpts[longIndex].name) == 0) {
+				myArgs.nth = optarg;
+			} else {
+				usage(1);
+			}
 			break;
 		default:
 			// you should not get to here unless you have a invalid argument
+			printf("default");
 			usage(1);
 			break;
 		}
-		opt = getopt_long(argc, argv, optString, longOpts, longIndex);
+		opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
 	}
 	if (myArgs.help == TRUE)
 		usage(0);
@@ -182,13 +280,26 @@ int main(int argc, char *argv[])
 	}
 	if (myArgs.debug == TRUE) {
 		printf("the -d options: %s\n", myArgs.debug_opt);
-		printf("-v: %d, -h: %d, -V: %d, -p: %d, -d: %d\n", myArgs.verbose, myArgs.help,
-		       myArgs.version, myArgs.print, myArgs.debug);
+		printf("-v: %d, -h: %d, -V: %d, -p: %d, -d: %d --first: %d, --rest: %d, --nth: %s\n",
+		       myArgs.verbose, myArgs.help, myArgs.version, myArgs.print, myArgs.debug, myArgs.first,
+		       myArgs.rest, myArgs.nth);
 	}
 	if (myArgs.print == TRUE) {
 		struct linked_list_t *list = create_empty_list();
 		fill_list(list);
-		print_list(list);
+		if (myArgs.first == TRUE) {
+			/* print_slice_list(list, 0, 1); // 0 for start link, 1 for stop link */
+			list = first(list);
+			print_all_list(list);
+		} else if (myArgs.rest == TRUE) {
+			/* print_slice_list(list, 1, 100); // 0 for start link, 100 so it prints all */
+			list = rest(list);
+			print_all_list(list);
+		} else if (myArgs.nth != NULL) {
+			printf("nth: %d\n", nth(list, atoi(myArgs.nth)));
+		} else {
+			print_all_list(list);
+		}
 		delete_list(list);
 	}
 	return 0;
