@@ -27,6 +27,7 @@ struct myArgs_t
 	int first;              /* The --first arg which will print the first element of linked list */
 	int rest;               /* The --rest arg which will print all but the first element of linked list */
 	char *nth;              /* The --nth arg which will print the nth element of linked list */
+	char *list;             /* The --list argument which will take numbers and use those for the list */
 } myArgs;
 
 struct link_t
@@ -59,6 +60,8 @@ static const struct option longOpts[] = {
 	},
 	{"nth", required_argument, NULL, 0
 	},
+	{"list", required_argument, NULL, 0
+	},
 	{ NULL, no_argument, NULL, 0
 	}
 };
@@ -73,7 +76,8 @@ void usage(int exit_code)
 	       "and exit\n  -p, --print\t\tprint all links in the linked list\n  -d, --debug [OPTIONS]\tprint"
 	       "the state of myArgs and options given\n      --first\t\tprint the first link in the list\n"
 	       "      --rest\t\tprint all links minus the first one\n      --nth=LINK\tprint the link specified"
-               ", if the option is more than the number of links then\n\t\t\tthis prints the last link\n\n");
+               ", if the option is more than the number of links then\n\t\t\tthis prints the last link\n"
+	       "      --list=LIST\tuse numbers given to add to the linked list like this: 1,2,3,44,123\n\n");
 	exit(exit_code);
 }
 
@@ -213,6 +217,13 @@ int nth(struct linked_list_t *list, int n)
 	return -1;
 }
 
+/* process --list arg here */
+int parse_list_arg(char *list_arg)
+{
+	printf("this is a function you have to build");
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int opt = 0;
@@ -227,6 +238,7 @@ int main(int argc, char *argv[])
 	myArgs.first = FALSE;
 	myArgs.rest = FALSE;
 	myArgs.nth = NULL;
+	myArgs.list = NULL;
 	int longIndex = 0;
 
 	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -255,6 +267,8 @@ int main(int argc, char *argv[])
 				myArgs.rest = TRUE;
 			} else if (strcmp("nth", longOpts[longIndex].name) == 0) {
 				myArgs.nth = optarg;
+			} else if (strcmp("list", longOpts[longIndex].name) == 0) {
+				myArgs.list = optarg;
 			} else {
 				usage(1);
 			}
@@ -283,6 +297,8 @@ int main(int argc, char *argv[])
 		printf("-v: %d, -h: %d, -V: %d, -p: %d, -d: %d --first: %d, --rest: %d, --nth: %s\n",
 		       myArgs.verbose, myArgs.help, myArgs.version, myArgs.print, myArgs.debug, myArgs.first,
 		       myArgs.rest, myArgs.nth);
+		printf("--list: %s\n", myArgs.list);
+
 	}
 	if (myArgs.print == TRUE) {
 		struct linked_list_t *list = create_empty_list();
@@ -301,6 +317,12 @@ int main(int argc, char *argv[])
 			print_all_list(list);
 		}
 		delete_list(list);
+	}
+	if (myArgs.list != NULL) {
+		int i;
+		printf("--list arg given: %s\n", myArgs.list);
+		i = parse_list_arg(myArgs.list);
+		printf("test return int: %d\n", i);
 	}
 	return 0;
 }
