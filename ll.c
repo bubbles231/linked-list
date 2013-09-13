@@ -220,8 +220,24 @@ int nth(struct linked_list_t *list, int n)
 /* process --list arg here */
 int parse_list_arg(char *list_arg)
 {
-	printf("this is a function you have to build");
-	return 0;
+	char tokenstring[] = "12 13 14";
+	char seps[] = " ,";
+	char* token;
+	int var;
+	int input[5];
+	int i = 0;
+	token = strtok(tokenstring, seps);
+	while (token != NULL) {
+		sscanf(token, "%d", &var);
+		input[i++] = var;
+
+		token = strtok(NULL, seps);
+	}
+	for (i = 0; i < sizeof(input); i++) {
+		printf("i: %d, input: %d\n", i, input[i]);
+	}
+	printf("this is a function you have to build\n");
+	return 100;
 }
 
 int main(int argc, char *argv[])
