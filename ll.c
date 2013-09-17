@@ -18,16 +18,16 @@
 
 struct myArgs_t
 {
-	int verbose;            /* The -v --verbose args to turn on verbose mode */
-	int help;               /* The -h --help args to print a help message */
-	int version;            /* The -V --version args to print the version */
-	int print;              /* The -p --print args to print the linked lists */
-	int debug;              /* WILL MAKE VERBOSE TAKE DEBUG PLACE */
-	char *debug_opt;        /* The --debug arg which will print options given */
+	int verbose;            /* The -v --verbose arg to turn on verbose mode */
+	int help;               /* The -h --help arg to print a help message */
+	int version;            /* The -V --version arg to print the version */
+	int print;              /* The -p --print arg to print the linked lists */
 	int first;              /* The --first arg which will print the first element of linked list */
 	int rest;               /* The --rest arg which will print all but the first element of linked list */
 	char *nth;              /* The --nth arg which will print the nth element of linked list */
-	char *list;             /* The --list argument which will take numbers and use those for the list */
+	char *list;             /* The --list arg which will take numbers and use those for the list */
+	char *input;            /* The --input arg that will take a file or stdin*/
+	char *output;           /* The --output arg that will use filename given to write output */
 } myArgs;
 
 struct link_t
@@ -52,8 +52,6 @@ static const struct option longOpts[] = {
 	},
 	{ "print", no_argument, NULL, 'p'
 	},
-	{ "debug", optional_argument, NULL, 'd'
-	},
 	{"first", no_argument, NULL, 0
 	},
 	{"rest", no_argument, NULL, 0
@@ -62,22 +60,30 @@ static const struct option longOpts[] = {
 	},
 	{"list", required_argument, NULL, 0
 	},
+	{"input", optional_argument, NULL, 0
+	},
+	{"output", required_argument, NULL, 0
+	},
 	{ NULL, no_argument, NULL, 0
 	}
 };
 
-static const char *optString = "vhVpd;";
+static const char *optString = "vhVp";
 
 void usage(int exit_code)
 {
-	printf("Usage: ll [OPTION]\nA program that prints linked lists\n\nsome args cannot be run with debug"
-	       " because they exit the program\n  -v, --verbose\t\trun the program verbosely\n"
-	       "  -h, --help\t\tprint this help message and exit\n  -V, --version\t\tprint the program version"
-	       "and exit\n  -p, --print\t\tprint all links in the linked list\n  -d, --debug [OPTIONS]\tprint"
-	       "the state of myArgs and options given\n      --first\t\tprint the first link in the list\n"
-	       "      --rest\t\tprint all links minus the first one\n      --nth=LINK\tprint the link specified"
-               ", if the option is more than the number of links then\n\t\t\tthis prints the last link\n"
-	       "      --list=LIST\tuse numbers given to add to the linked list like this: 1,2,3,44,123\n\n");
+	printf("Usage: ll [OPTION]\nA program that prints linked lists\n\n"
+	       "  -v, --verbose\t\trun the program verbosely\n"
+	       "  -h, --help\t\tprint this help message and exit\n"
+	       "  -V, --version\t\tprint the program version and exit\n"
+	       "  -p, --print\t\tprint all links in the linked list\n"
+	       "      --first\t\tprint the first link in the list\n"
+	       "      --rest\t\tprint all links minus the first one\n"
+	       "      --nth=LINK\tprint the link specified, if the option is more than the number of links then"
+	       "\n\t\t\tthis prints the last link\n"
+	       "      --list=LIST\tuse numbers given to make list, this assumes you want --print\n"
+	       "      --input=IN_FILE\twill make list from file or from stdin if IN_FILE == -\n"
+	       "      --input=OUT_FILE\twill write output to file\n\n");
 	exit(exit_code);
 }
 
@@ -217,27 +223,65 @@ int nth(struct linked_list_t *list, int n)
 	return -1;
 }
 
-/* process --list arg here */
-int parse_list_arg(char *list_arg)
+void print_to_file(struct linked_list_t *list, char *out_name)
 {
-	char tokenstring[] = "12 13 14";
-	char seps[] = " ,";
-	char* token;
-	int var;
-	int input[5];
+	FILE *ofp;
+	struct link_t *link = list->head;
 	int i = 0;
-	token = strtok(tokenstring, seps);
-	while (token != NULL) {
-		sscanf(token, "%d", &var);
-		input[i++] = var;
 
-		token = strtok(NULL, seps);
+	ofp = fopen(out_name, "w");
+	if (ofp == NULL) {
+		fprintf(stderr, "Can't open output file %s\n",
+			out_name);
+		exit(1);
 	}
-	for (i = 0; i < sizeof(input); i++) {
-		printf("i: %d, input: %d\n", i, input[i]);
+
+
+	fprintf(ofp, "list has %d elements\n", list->length);
+	while (link != NULL) {
+		fprintf(ofp, "%2d: %3d\n", i, link->value);
+		link = link->next;
+		i++;
 	}
-	printf("this is a function you have to build\n");
-	return 100;
+
+	fclose(ofp);
+}
+
+struct linked_list_t* list_from_file(struct linked_list_t *list, char *in_name)
+{
+	FILE *ifp;
+	char *mode = "r";
+	ifp = fopen(in_name, mode);
+
+	if (ifp == NULL) {
+		fprintf(stderr, "Can't open input file %s\n",
+			in_name);
+		exit(1);
+	}
+
+	char list_val[10]; /* support number no more than 9 digits long, extra is for NULL */
+	while (fscanf(ifp, "%s", list_val) != EOF) {
+		add_to_list(list, atoi(list_val));
+	}
+
+	fclose(ifp);
+	return list;
+}
+
+struct linked_list_t* list_from_stdin(struct linked_list_t *list, FILE *ifp)
+{
+	if (ifp == NULL) {
+		fprintf(stderr, "Can't read from stdin\n");
+		exit(1);
+	}
+
+	char list_val[10]; /* support number no more than 9 digits long, extra is for NULL */
+	while (fscanf(ifp, "%s", list_val) != EOF) {
+		add_to_list(list, atoi(list_val));
+	}
+
+	fclose(ifp);
+	return list;
 }
 
 int main(int argc, char *argv[])
@@ -249,12 +293,12 @@ int main(int argc, char *argv[])
 	myArgs.help = FALSE;
 	myArgs.version = FALSE;
 	myArgs.print = FALSE;
-	myArgs.debug = FALSE;
-	myArgs.debug_opt = NULL;
 	myArgs.first = FALSE;
 	myArgs.rest = FALSE;
 	myArgs.nth = NULL;
 	myArgs.list = NULL;
+	myArgs.input = NULL;
+	myArgs.output = NULL;
 	int longIndex = 0;
 
 	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -272,10 +316,6 @@ int main(int argc, char *argv[])
 		case 'p':
 			myArgs.print = TRUE;
 			break;
-		case 'd':
-			myArgs.debug = TRUE;
-			myArgs.debug_opt = optarg;
-			break;
 		case 0: /* long option without a short arg */
 			if (strcmp("first", longOpts[longIndex].name) == 0) {
 				myArgs.first = TRUE;
@@ -285,6 +325,10 @@ int main(int argc, char *argv[])
 				myArgs.nth = optarg;
 			} else if (strcmp("list", longOpts[longIndex].name) == 0) {
 				myArgs.list = optarg;
+			} else if (strcmp("input", longOpts[longIndex].name) == 0) {
+				myArgs.input = optarg;
+			} else if (strcmp("output", longOpts[longIndex].name) == 0) {
+				myArgs.output = optarg;
 			} else {
 				usage(1);
 			}
@@ -308,17 +352,29 @@ int main(int argc, char *argv[])
 		printf("Linked Lists version: %s\n", p);
 		exit(0);
 	}
-	if (myArgs.debug == TRUE) {
-		printf("the -d options: %s\n", myArgs.debug_opt);
-		printf("-v: %d, -h: %d, -V: %d, -p: %d, -d: %d --first: %d, --rest: %d, --nth: %s\n",
-		       myArgs.verbose, myArgs.help, myArgs.version, myArgs.print, myArgs.debug, myArgs.first,
-		       myArgs.rest, myArgs.nth);
-		printf("--list: %s\n", myArgs.list);
-
-	}
-	if (myArgs.print == TRUE) {
+	if (myArgs.print == TRUE || myArgs.list != NULL || myArgs.input != NULL) {
 		struct linked_list_t *list = create_empty_list();
-		fill_list(list);
+		if (myArgs.list != NULL) {
+			int tmp;
+			add_to_list(list, atoi(myArgs.list));
+			while (optind < argc) {
+				tmp = atoi(argv[optind++]);
+				add_to_list(list, tmp);
+			}
+		} else if (myArgs.input != NULL) {
+			FILE *input;
+			if (!strcmp(myArgs.input, "-")) {
+				input = stdin;
+				list = list_from_stdin(list, input);
+			} else {
+				list = list_from_file(list, myArgs.input);
+			}
+			if (myArgs.output != NULL) {
+				print_to_file(list, myArgs.output);
+			}
+		} else {
+			fill_list(list);
+		}
 		if (myArgs.first == TRUE) {
 			/* print_slice_list(list, 0, 1); // 0 for start link, 1 for stop link */
 			list = first(list);
@@ -333,12 +389,8 @@ int main(int argc, char *argv[])
 			print_all_list(list);
 		}
 		delete_list(list);
-	}
-	if (myArgs.list != NULL) {
-		int i;
-		printf("--list arg given: %s\n", myArgs.list);
-		i = parse_list_arg(myArgs.list);
-		printf("test return int: %d\n", i);
+	} else {
+		printf("run the program with -h or --help to use it\n");
 	}
 	return 0;
 }
