@@ -10,7 +10,7 @@
 #include<getopt.h>
 #include<string.h>
 
-#define VERSION_NUMBER 0.1
+#define VERSION_NUMBER 0.2
 #define VERSION_STRING_HELPER(X) #X
 #define VERSION_STRING(X) VERSION_STRING_HELPER(X)
 #define TRUE 1
