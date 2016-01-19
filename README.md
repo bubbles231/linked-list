@@ -12,3 +12,9 @@ Just type ```make```
 ## Running
 
 ```$ ./ll -h```
+
+## Copyright and license
+
+Copyright © 2016 Arthur Marble
+
+Licensed under the [MIT](http://opensource.org/licenses/MIT) [LICENSE](LICENSE)
